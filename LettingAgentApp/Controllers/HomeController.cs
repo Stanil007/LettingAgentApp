@@ -1,4 +1,5 @@
-﻿using LettingAgentApp.Models;
+﻿using LettingAgentApp.Core.Contracts;
+using LettingAgentApp.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 
@@ -6,16 +7,18 @@ namespace LettingAgentApp.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
 
-        public HomeController(ILogger<HomeController> logger)
+        private readonly IHouseService houseService;
+
+        public HomeController(IHouseService _houseService)
         {
-            _logger = logger;
+            houseService = _houseService;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View();
+            var model = await houseService.LastThreeHouses();
+            return View(model);
         }
 
         public IActionResult Privacy()
