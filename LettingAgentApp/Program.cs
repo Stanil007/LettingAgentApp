@@ -1,3 +1,5 @@
+using LettingAgentApp.Core.Contracts;
+using LettingAgentApp.Core.Services;
 using LettingAgentApp.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -18,7 +20,11 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
     options.Password.RequireLowercase = false;
 })
     .AddEntityFrameworkStores<ApplicationDbContext>();
+
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<IAgentService, AgentService>();
+builder.Services.AddScoped<IHouseService, HouseService>();
+
 
 var app = builder.Build();
 
