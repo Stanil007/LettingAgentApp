@@ -1,4 +1,5 @@
 ﻿using LettingAgentApp.Core.Contracts;
+using LettingAgentApp.Core.DtoModels.Agent;
 using LettingAgentApp.Core.DtoModels.House;
 using LettingAgentApp.Infrastructure.Data;
 using LettingAgentApp.Infrastructure.Data.Entities;
@@ -124,6 +125,70 @@ namespace LettingAgentApp.Core.Services
             await context.SaveChangesAsync();
 
             return house.Id;
+        }
+
+        public async Task Edit(int houseId, string title,
+            string address, string description, string imageUrl, decimal price, int categoryId)
+        {
+            var house = await context.Houses.FindAsync(houseId);
+
+            house.Description = description;
+            house.ImageUrl = imageUrl;
+            house.PricePerMonth = price;
+            house.Title = title;
+            house.Address = address;
+            house.CategoryId = categoryId;
+
+            context.SaveChangesAsync();
+        }
+
+        public async Task<bool> Exists(int id)
+        {
+            return await context.Houses.AnyAsync(h => h.Id == id);
+        }
+
+        public async Task<int> GetHouseCategoryId(int houseId)
+        {
+            return (await context.Houses.FindAsync(houseId)).CategoryId;
+        }
+
+        public async Task<bool> HasAgentWithId(int houseId, string currentUserId)
+        {
+            bool result = false;
+            var house = await context.Houses
+                .Where(h => h.Id == houseId)
+                .Include(h => h.Agent)
+                .FirstOrDefaultAsync();
+
+            if (house.Agent != null && house.Agent.UserId == currentUserId)
+            {
+                result = true;
+            }
+
+            return result;
+        }
+
+        public async Task<HouseDetailsServiceModel> HouseDetailsById(int id)
+        {
+            return await context.Houses
+                        .Where(h => h.Id == id)
+                        .Select(h => new HouseDetailsServiceModel()
+                        {
+                            Id = h.Id,
+                            Title = h.Title,
+                            Address = h.Address,
+                            Description = h.Description,
+                            ImageUrl = h.ImageUrl,
+                            PricePerMonth = h.PricePerMonth,
+                            IsRented = h.RenterId != null,
+                            Category = h.Category.Name,
+                            Agent = new AgentServiceModel()
+                            {
+                                PhoneNumber = h.Agent.PhoneNumber,
+                                Email = h.Agent.User.Email
+                            }
+                        })
+                        .FirstOrDefaultAsync();
         }
 
         public async Task<IEnumerable<HouseIndexServiceModel>> LastThreeHouses()

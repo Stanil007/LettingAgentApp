@@ -24,5 +24,16 @@ namespace LettingAgentApp.Core.Contracts
         Task<IEnumerable<HouseServiceModel>> AllHousesByAgentId(int id);
 
         Task<IEnumerable<HouseServiceModel>> AllHousesByUserId(string userId);
+
+        Task<HouseDetailsServiceModel> HouseDetailsById(int id);
+
+        Task<bool> Exists(int id);
+
+        Task Edit(int houseId, string title,
+            string address, string description, string imageUrl, decimal price, int categoryId);
+
+        Task<bool> HasAgentWithId(int houseId, string currentUserId);
+
+        Task<int> GetHouseCategoryId(int houseId);
     }
 }
