@@ -1,5 +1,6 @@
 ﻿using LettingAgentApp.Core.Contracts;
 using LettingAgentApp.Core.DtoModels.House;
+using LettingAgentApp.Infrastructure.Data.Entities;
 using LettingAgentApp.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -112,6 +113,48 @@ namespace LettingAgentApp.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> Delete(int houseId)
+        {
+            if (! await houseService.Exists(houseId))
+            {
+                return BadRequest();
+            }
+
+            if (! await houseService.HasAgentWithId(houseId, User.Id()))
+            {
+                return Unauthorized();
+            }
+
+            var house = await houseService.HouseDetailsById(houseId);
+            var model = new HouseDetailsViewModel()
+            {
+                Address = house.Address,
+                ImageUrl = house.ImageUrl,
+                Title = house.Title
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Delete(HouseDetailsServiceModel model)
+        {
+
+            if (!await houseService.Exists(model.Id))
+            {
+                return BadRequest();
+            }
+
+            if (!await houseService.HasAgentWithId(model.Id, User.Id()))
+            {
+                return Unauthorized();
+            }
+            await houseService.Delete(model.Id);
+
+            return RedirectToAction(nameof(All));
+        }
+
+        [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
             if (! await houseService.Exists(id))
@@ -172,27 +215,42 @@ namespace LettingAgentApp.Controllers
             return RedirectToAction(nameof(Details), new { id = id});
         }
 
-        [HttpGet]
-        public async Task<IActionResult> Delete(int id)
-        {
-            return View(new HouseDetailsServiceModel());
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Delete(HouseDetailsServiceModel model)
-        {
-            return RedirectToAction(nameof(All));
-        }
-
         [HttpPost]
         public async Task<IActionResult> Rent(int id)
         {
+            if (! await houseService.Exists(id))
+            {
+                return BadRequest();
+            }
+
+            if (! await agentService.ExistsById(User.Id()))
+            {
+                return Unauthorized();
+            }
+
+            if (! await houseService.IsRented(id))
+            {
+                return BadRequest();
+            }
+
+            await houseService.Rent(id, User.Id());
             return RedirectToAction(nameof(Mine));
         }
 
         [HttpPost]
         public async Task<IActionResult> Leave(int id)
         {
+            if (! await houseService.Exists(id) || ! await houseService.IsRented(id))
+            {
+                return BadRequest();
+            }
+
+            if (! await houseService.IsRentedByUserWithId(id,User.Id()))
+            {
+                return Unauthorized();
+            }
+
+            await houseService.Leave(id);
             return RedirectToAction(nameof(Mine));
         }
     }

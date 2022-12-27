@@ -127,6 +127,14 @@ namespace LettingAgentApp.Core.Services
             return house.Id;
         }
 
+        public async Task Delete(int houseId)
+        {
+            var house = await context.Houses.FindAsync(houseId);
+
+            context.Houses.Remove(house);
+            await context.SaveChangesAsync();
+        }
+
         public async Task Edit(int houseId, string title,
             string address, string description, string imageUrl, decimal price, int categoryId)
         {
@@ -191,6 +199,27 @@ namespace LettingAgentApp.Core.Services
                         .FirstOrDefaultAsync();
         }
 
+        public async Task<bool> IsRented(int houseId)
+        {
+            return (await context.Houses.FindAsync(houseId)).RenterId != null;
+        }
+
+        public async Task<bool> IsRentedByUserWithId(int houseId, string currentUserId)
+        {
+            var house = await context.Houses.FindAsync(houseId);
+            if (house == null)
+            {
+                return false;
+            }
+
+            if (house.RenterId != currentUserId)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         public async Task<IEnumerable<HouseIndexServiceModel>> LastThreeHouses()
         {
             return await context.Houses
@@ -203,6 +232,20 @@ namespace LettingAgentApp.Core.Services
                  })
                  .Take(3)
                  .ToListAsync();
+        }
+
+        public async Task Leave(int houseId)
+        {
+            var house = await context.Houses.FindAsync(houseId);
+            house.RenterId = null;
+            await context.SaveChangesAsync();
+        }
+
+        public async Task Rent(int houseId, string currentUserId)
+        {
+            var house = await context.Houses.FindAsync(houseId);
+            house.RenterId = currentUserId;
+            await context.SaveChangesAsync();
         }
 
         private List<HouseServiceModel> ProjectToModel(List<House> houses)
